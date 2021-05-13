@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { NEXT_URL } from "@/config/index";
 
@@ -8,13 +8,34 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
 
-  //Register user
+  const router = useRouter();
+
+  useEffect(() => checkUserLoggedIn(), []);
+
+  // Register user
   const register = async (user) => {
-    console.log(user);
+    const res = await fetch(`${NEXT_URL}/api/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setUser(data.user);
+      router.push("/account/dashboard");
+    } else {
+      setError(data.message);
+      setError(null);
+    }
   };
-  //Login user
+
+  // Login user
   const login = async ({ email: identifier, password }) => {
-    const res = await fetch(`${NEXT_URL}/api/login `, {
+    const res = await fetch(`${NEXT_URL}/api/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -24,25 +45,40 @@ export const AuthProvider = ({ children }) => {
         password,
       }),
     });
-    const data = await res.json();
 
-    console.log(data);
+    const data = await res.json();
 
     if (res.ok) {
       setUser(data.user);
+      router.push("/account/dashboard");
     } else {
       setError(data.message);
       setError(null);
     }
   };
-  //Logout user
-  const logout = async () => {
-    console.log("Logout");
-  };
-  //Check if user is login
 
-  const checUserLoggedIn = async (user) => {
-    console.log("check");
+  // Logout user
+  const logout = async () => {
+    const res = await fetch(`${NEXT_URL}/api/logout`, {
+      method: "POST",
+    });
+
+    if (res.ok) {
+      setUser(null);
+      router.push("/");
+    }
+  };
+
+  // Check if user is logged in
+  const checkUserLoggedIn = async (user) => {
+    const res = await fetch(`${NEXT_URL}/api/user`);
+    const data = await res.json();
+
+    if (res.ok) {
+      setUser(data.user);
+    } else {
+      setUser(null);
+    }
   };
 
   return (
